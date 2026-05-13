@@ -1,3 +1,15 @@
+# lama-cleaner-iOS
+
+**LaMa-style image inpainting, fully on-device, for iOS. The same "magic erase" UX you've seen in Photos, running on your iPhone with zero server.**
+
+By [Daisuke Majima](https://john-rocky.github.io). The LaMa weights are ported in [CoreML-Models](https://github.com/john-rocky/CoreML-Models) (1,749★). This repo wraps them in a usable iOS sample.
+
+📱 Powers [Mask2Face on the App Store](https://apps.apple.com/us/developer/daisuke-majima/id1350309854).
+
+💼 **Open to Staff / Senior iOS / Mobile ML roles** — [john-rocky.github.io](https://john-rocky.github.io)
+
+---
+
 <p align="center">
 <img src=https://github.com/john-rocky/PersonSegmentationSampler/assets/23278992/8fed8e4c-ab95-4e2b-ac19-30cbe3069308 width=300>
 </p>
