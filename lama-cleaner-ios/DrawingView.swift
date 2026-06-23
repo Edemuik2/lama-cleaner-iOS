@@ -3,7 +3,7 @@
 //  Lama-Cleaner-iOS
 //
 //  Created by 間嶋大輔 on 2023/12/27.
-//  Modified for Apple Clean Up Neon Glow Effect
+//  Modified for Apple Clean Up Exact Neon Glow Effect
 //
 
 import Foundation
@@ -25,10 +25,12 @@ class DrawingView: UIView {
     private var currentLine: Line?
     private var lineWidth: CGFloat = 10
 
-    // Кастомные слои для эффекта Apple Intelligence Clean Up
+    // Кастомные слои для эффекта плазмы (Apple Clean Up)
+    private let outerGlowLayer = CAShapeLayer()
     private let gradientLayer = CAGradientLayer()
-    private let strokeMaskLayer = CAShapeLayer()
-    private let glowLayer = CAShapeLayer()
+    private let gradientMaskLayer = CAShapeLayer()
+    private let innerCoreLayer = CAShapeLayer()
+    private let roiLayer = CAShapeLayer()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -43,46 +45,71 @@ class DrawingView: UIView {
     private func setupGlowBrush() {
         backgroundColor = .clear
 
-        // 1. Слой свечения (создает неоновую тень вокруг кисти)
-        glowLayer.fillColor = UIColor.clear.cgColor
-        glowLayer.shadowColor = UIColor(red: 0.8, green: 0.2, blue: 1.0, alpha: 1.0).cgColor // Фиолетово-розовое свечение
-        glowLayer.shadowRadius = 15
-        glowLayer.shadowOpacity = 1.0
-        glowLayer.shadowOffset = .zero
-        layer.addSublayer(glowLayer)
+        // 1. Внешнее свечение (создает мягкий светящийся ореол вокруг кисти)
+        outerGlowLayer.fillColor = UIColor.clear.cgColor
+        outerGlowLayer.lineCap = .round
+        outerGlowLayer.lineJoin = .round
+        outerGlowLayer.strokeColor = UIColor.white.withAlphaComponent(0.1).cgColor
+        outerGlowLayer.shadowColor = UIColor(red: 0.8, green: 0.2, blue: 1.0, alpha: 1.0).cgColor // Фиолетово-розовое свечение
+        outerGlowLayer.shadowRadius = 15
+        outerGlowLayer.shadowOpacity = 1.0
+        outerGlowLayer.shadowOffset = .zero
+        layer.addSublayer(outerGlowLayer)
 
-        // 2. Градиентный слой (анимированная плазма)
+        // 2. Градиентный слой (полупрозрачная переливающаяся основа)
         gradientLayer.startPoint = CGPoint(x: 0, y: 0)
         gradientLayer.endPoint = CGPoint(x: 1, y: 1)
         
-        let color1 = UIColor(red: 1.0, green: 0.2, blue: 0.8, alpha: 1.0).cgColor // Неоновый розовый
+        let color1 = UIColor(red: 0.2, green: 0.8, blue: 1.0, alpha: 1.0).cgColor // Голубой
         let color2 = UIColor(red: 0.6, green: 0.2, blue: 1.0, alpha: 1.0).cgColor // Фиолетовый
-        let color3 = UIColor(red: 0.2, green: 0.8, blue: 1.0, alpha: 1.0).cgColor // Голубой
-        let color4 = UIColor(red: 1.0, green: 0.9, blue: 0.2, alpha: 1.0).cgColor // Желтый
+        let color3 = UIColor(red: 1.0, green: 0.2, blue: 0.6, alpha: 1.0).cgColor // Малиновый
+        let color4 = UIColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 1.0).cgColor // Желтый
 
-        gradientLayer.colors = [color1, color2, color3, color4]
+        gradientLayer.colors = [color1, color2, color3, color4, color1]
+        gradientLayer.opacity = 0.75 // Делаем кисть полупрозрачной, чтобы видеть фото под ней
 
-        // Анимация переливания цветов
+        // Плавная анимация переливания цветов
         let animation = CABasicAnimation(keyPath: "colors")
-        animation.fromValue = [color1, color2, color3, color4]
-        animation.toValue = [color4, color1, color2, color3]
-        animation.duration = 1.5
-        animation.autoreverses = true
+        animation.fromValue = [color1, color2, color3, color4, color1]
+        animation.toValue = [color2, color3, color4, color1, color2]
+        animation.duration = 2.0
         animation.repeatCount = .infinity
         gradientLayer.add(animation, forKey: "colorsChange")
 
+        // Маска, которая придает градиенту форму нарисованной линии
+        gradientMaskLayer.fillColor = UIColor.clear.cgColor
+        gradientMaskLayer.strokeColor = UIColor.black.cgColor
+        gradientMaskLayer.lineCap = .round
+        gradientMaskLayer.lineJoin = .round
+        gradientLayer.mask = gradientMaskLayer
+        
         layer.addSublayer(gradientLayer)
 
-        // 3. Слой-маска (вырезает градиент по форме рисунка)
-        strokeMaskLayer.fillColor = UIColor.white.cgColor
-        gradientLayer.mask = strokeMaskLayer
+        // 3. Внутреннее светящееся ядро (создает эффект яркой плазмы внутри кисти)
+        innerCoreLayer.fillColor = UIColor.clear.cgColor
+        innerCoreLayer.strokeColor = UIColor.white.withAlphaComponent(0.6).cgColor
+        innerCoreLayer.lineCap = .round
+        innerCoreLayer.lineJoin = .round
+        innerCoreLayer.shadowColor = UIColor.white.cgColor
+        innerCoreLayer.shadowRadius = 5
+        innerCoreLayer.shadowOpacity = 1.0
+        innerCoreLayer.shadowOffset = .zero
+        layer.addSublayer(innerCoreLayer)
+        
+        // 4. Слой для отрисовки рамки в режиме Crop ROI
+        roiLayer.fillColor = UIColor.clear.cgColor
+        roiLayer.strokeColor = UIColor.yellow.withAlphaComponent(0.8).cgColor
+        roiLayer.lineWidth = 2.0
+        layer.addSublayer(roiLayer)
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
         gradientLayer.frame = bounds
-        glowLayer.frame = bounds
-        strokeMaskLayer.frame = bounds
+        gradientMaskLayer.frame = bounds
+        outerGlowLayer.frame = bounds
+        innerCoreLayer.frame = bounds
+        roiLayer.frame = bounds
         updatePath()
     }
 
@@ -118,46 +145,49 @@ class DrawingView: UIView {
         delegate?.drawingViewDidFinishDrawing(self)
     }
 
-    // Главная функция генерации красивой кисти
+    // Эта функция теперь строит правильную векторную линию для красивого отображения
     private func updatePath() {
-        let combinedPath = CGMutablePath()
+        let path = CGMutablePath()
 
         for line in lines {
-            let linePath = CGMutablePath()
             guard let firstPoint = line.points.first else { continue }
-            linePath.move(to: firstPoint)
+            path.move(to: firstPoint)
             for point in line.points.dropFirst() {
-                linePath.addLine(to: point)
+                path.addLine(to: point)
             }
-            // Конвертируем линию в сплошной закрашенный контур
-            let strokedPath = linePath.copy(strokingWithWidth: line.lineWidth, lineCap: .round, lineJoin: .round, miterLimit: 10)
-            combinedPath.addPath(strokedPath)
         }
 
         if let currentLine = currentLine {
-            let linePath = CGMutablePath()
             guard let firstPoint = currentLine.points.first else { return }
-            linePath.move(to: firstPoint)
+            path.move(to: firstPoint)
             for point in currentLine.points.dropFirst() {
-                linePath.addLine(to: point)
+                path.addLine(to: point)
             }
-            let strokedPath = linePath.copy(strokingWithWidth: currentLine.lineWidth, lineCap: .round, lineJoin: .round, miterLimit: 10)
-            combinedPath.addPath(strokedPath)
         }
+
+        let cgPath = path.copy()
         
+        // Применяем форму линии ко всем слоям эффекта
+        outerGlowLayer.path = cgPath
+        outerGlowLayer.lineWidth = lineWidth
+        
+        gradientMaskLayer.path = cgPath
+        gradientMaskLayer.lineWidth = lineWidth
+        
+        innerCoreLayer.path = cgPath
+        innerCoreLayer.lineWidth = lineWidth * 0.35 // Ядро тоньше основной кисти
+        
+        // Отрисовка прямоугольника для режима Crop ROI
         if mode == .cropROI {
             let boundingRect = calculateBoundingRect()
             let rectPath = CGPath(rect: boundingRect, transform: nil)
-            let strokedRect = rectPath.copy(strokingWithWidth: 2.0, lineCap: .square, lineJoin: .miter, miterLimit: 10)
-            combinedPath.addPath(strokedRect)
+            roiLayer.path = rectPath
+        } else {
+            roiLayer.path = nil
         }
-
-        strokeMaskLayer.path = combinedPath
-        glowLayer.path = combinedPath
-        glowLayer.fillColor = UIColor.white.withAlphaComponent(0.3).cgColor
     }
 
-    // Эта функция остается нетронутой — она генерирует Ч/Б маску для нейросети
+    // Эта функция 100% нетронута — она генерирует Ч/Б маску для нейросети
     func getImage() -> UIImage? {
         UIGraphicsBeginImageContextWithOptions(bounds.size, false, UIScreen.main.scale)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
