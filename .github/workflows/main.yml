@@ -1,0 +1,65 @@
+name: Build Lama Cleaner IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build unsigned IPA for iOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Lama Cleaner Repository
+        uses: actions/checkout@v4
+        with:
+          path: lama-cleaner-iOS
+
+      - name: Checkout CoreMLaMa Repository
+        uses: actions/checkout@v4
+        with:
+          repository: mallman/CoreMLaMa
+          path: CoreMLaMa
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies and Convert LaMa Model
+        run: |
+          cd CoreMLaMa
+          pip install -r requirements.txt
+          python convert_lama.py
+          mv LaMa.mlpackage ../lama-cleaner-iOS/
+
+      - name: Add LaMa.mlpackage to Xcode Project
+        run: |
+          cd lama-cleaner-iOS
+          gem install xcodeproj
+          ruby -e "require 'xcodeproj'; project = Xcodeproj::Project.open('lama-cleaner-ios.xcodeproj'); target = project.targets.first; file_ref = project.main_group.new_reference('LaMa.mlpackage'); target.add_file_references([file_ref]); project.save"
+
+      - name: Build Xcode Project
+        run: |
+          cd lama-cleaner-iOS
+          xcodebuild clean build \
+            -project "lama-cleaner-ios.xcodeproj" \
+            -scheme "lama-cleaner-ios" \
+            -configuration Release \
+            -sdk iphoneos \
+            CONFIGURATION_BUILD_DIR="${PWD}/build" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package into IPA
+        run: |
+          cd lama-cleaner-iOS
+          mkdir -p Payload
+          cp -R build/*.app Payload/
+          zip -qr LamaCleaner.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LamaCleaner-IPA
+          path: lama-cleaner-iOS/LamaCleaner.ipa
