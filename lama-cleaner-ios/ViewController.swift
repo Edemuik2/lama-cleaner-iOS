@@ -120,7 +120,6 @@ class ViewController: UIViewController,PHPickerViewControllerDelegate, UIPickerV
                     
                     image = UIImage(cgImage: resultCGImage)
 
-//                    image = image.resized(toSize: drawingRect.size)!
                     image = image.resize(size: drawingRect.size)
                     print(image.size)
                     print(inputImage.size)
@@ -379,7 +378,8 @@ class ViewController: UIViewController,PHPickerViewControllerDelegate, UIPickerV
         let combinedImage = renderer.image { context in
             croppedImage1!.draw(in: image1Rect)
             croppedImage2!.draw(in: image2Rect)
-            let lineColor = UIColor.yellow.withAlphaComponent(0.5)
+            // Изменили цвет ползунка на чистый белый, как в iOS 18
+            let lineColor = UIColor.white.withAlphaComponent(0.8)
             lineColor.set()
             context.cgContext.move(to: CGPoint(x: lineXPosition, y: 0))
             context.cgContext.addLine(to: CGPoint(x: lineXPosition, y: image1.size.height))
@@ -396,16 +396,6 @@ enum InpaintingMode {
     case cropROI
 }
 
-//extension UIImage {
-//    func resized(toSize newSize: CGSize) -> UIImage? {
-//        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-//        defer { UIGraphicsEndImageContext() }
-//        self.draw(in: CGRect(origin: .zero, size: newSize))
-//        return UIGraphicsGetImageFromCurrentImageContext()
-//    }
-//
-//
-//}
 extension UIImage {
     func resize(size _size: CGSize) -> UIImage? {
         let aspectWidth = _size.width / size.width
@@ -423,4 +413,3 @@ extension UIImage {
         return resizedImage
     }
 }
-
